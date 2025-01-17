@@ -1,0 +1,144 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Physics Header Animation</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/matter-js/0.19.0/matter.min.js"></script>
+    <style>
+        body, html {
+            margin: 0;
+            padding: 0;
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+        }
+        
+        #physics-canvas {
+            width: 100%;
+            height: 100%;
+        }
+    </style>
+</head>
+<body>
+    <canvas id="physics-canvas"></canvas>
+    <script>
+        const Engine = Matter.Engine,
+              Render = Matter.Render,
+              World = Matter.World,
+              Bodies = Matter.Bodies;
+
+        const engine = Engine.create({
+            enableSleeping: false
+        });
+        
+        const render = Render.create({
+            canvas: document.getElementById('physics-canvas'),
+            engine: engine,
+            options: {
+                width: window.innerWidth,
+                height: window.innerHeight,
+                wireframes: false,
+                background: 'white',
+                pixelRatio: window.devicePixelRatio
+            }
+        });
+
+        const colors = [
+            '#008080', // Teal
+            '#00CED1', // Dark turquoise
+            '#20B2AA'  // Light sea green
+        ];
+
+        const triangles = [];
+        
+        function createTriangle() {
+            const x = Math.random() * render.options.width;
+            const size = 20 + Math.random() * 30;
+            const triangle = Bodies.polygon(x, -50, 3, size, {
+                render: {
+                    fillStyle: colors[Math.floor(Math.random() * colors.length)],
+                    strokeStyle: 'transparent'
+                },
+                restitution: 0.6,
+                friction: 0.1,
+                angle: Math.random() * Math.PI
+            });
+            return triangle;
+        }
+
+        // Create initial triangles
+        for (let i = 0; i < 15; i++) {
+            const triangle = createTriangle();
+            triangle.position.y = Math.random() * render.options.height;
+            triangles.push(triangle);
+        }
+
+        // Create boundaries
+        const ground = Bodies.rectangle(
+            render.options.width / 2,
+            render.options.height + 30,
+            render.options.width,
+            60,
+            { isStatic: true, render: { fillStyle: 'white' } }
+        );
+
+        const leftWall = Bodies.rectangle(
+            -30,
+            render.options.height / 2,
+            60,
+            render.options.height,
+            { isStatic: true }
+        );
+
+        const rightWall = Bodies.rectangle(
+            render.options.width + 30,
+            render.options.height / 2,
+            60,
+            render.options.height,
+            { isStatic: true }
+        );
+
+        World.add(engine.world, [...triangles, ground, leftWall, rightWall]);
+
+        Engine.run(engine);
+        Render.run(render);
+
+        // Handle window resize
+        window.addEventListener('resize', () => {
+            render.canvas.width = window.innerWidth;
+            render.canvas.height = window.innerHeight;
+            render.options.width = render.canvas.width;
+            render.options.height = render.canvas.height;
+            
+            Matter.Body.setPosition(ground, {
+                x: render.options.width / 2,
+                y: render.options.height + 30
+            });
+            
+            Matter.Body.setPosition(rightWall, {
+                x: render.options.width + 30,
+                y: render.options.height / 2
+            });
+        });
+
+        // Add new triangles periodically
+        setInterval(() => {
+            // Remove triangles that have fallen below the canvas
+            triangles.forEach((triangle, index) => {
+                if (triangle.position.y > render.options.height + 100) {
+                    World.remove(engine.world, triangle);
+                    triangles.splice(index, 1);
+                }
+            });
+
+            // Add new triangles if we're below the limit
+            if (triangles.length < 20) {
+                const triangle = createTriangle();
+                triangles.push(triangle);
+                World.add(engine.world, triangle);
+            }
+        }, 2000);
+    </script>
+</body>
+</html>
