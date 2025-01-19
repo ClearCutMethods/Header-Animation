@@ -1,0 +1,70 @@
+import React, { useState } from 'react';
+
+const ExplodingCircle = () => {
+  const [isExploding, setIsExploding] = useState(false);
+  const [particles, setParticles] = useState([]);
+
+  const handleClick = () => {
+    if (!isExploding) {
+      setIsExploding(true);
+      
+      // Create explosion particles
+      const newParticles = Array.from({ length: 12 }, (_, i) => ({
+        id: i,
+        angle: (i * 30 * Math.PI) / 180, // Distribute particles in a circle
+        delay: i * 50 // Stagger the animation
+      }));
+      
+      setParticles(newParticles);
+
+      // Reset after animation
+      setTimeout(() => {
+        setIsExploding(false);
+        setParticles([]);
+      }, 1000);
+    }
+  };
+
+  return (
+    <div className="flex items-center justify-center h-96">
+      <div className="relative">
+        {/* Main circle */}
+        <div
+          className={`w-24 h-24 rounded-full bg-blue-500 cursor-pointer transition-transform duration-200 hover:scale-110 ${
+            isExploding ? 'opacity-0' : 'opacity-100'
+          }`}
+          onClick={handleClick}
+        />
+        
+        {/* Explosion particles */}
+        {isExploding && particles.map(particle => (
+          <div
+            key={particle.id}
+            className="absolute top-1/2 left-1/2 w-4 h-4 rounded-full bg-yellow-400"
+            style={{
+              animation: 'particle 0.5s ease-out forwards',
+              transform: `rotate(${particle.angle}rad)`,
+              animationDelay: `${particle.delay}ms`
+            }}
+          />
+        ))}
+      </div>
+      
+      {/* CSS Animation */}
+      <style>{`
+        @keyframes particle {
+          0% {
+            transform: translate(-50%, -50%) rotate(var(--angle)) translateY(0);
+            opacity: 1;
+          }
+          100% {
+            transform: translate(-50%, -50%) rotate(var(--angle)) translateY(100px);
+            opacity: 0;
+          }
+        }
+      `}</style>
+    </div>
+  );
+};
+
+export default ExplodingCircle;
